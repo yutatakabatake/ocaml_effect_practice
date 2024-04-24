@@ -2,3 +2,8 @@
  (name main)
  (modules main)
  (public_name main))
+
+(executable
+ (name life_game)
+ (modules life_game)
+ (public_name life_game))
