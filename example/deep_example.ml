@@ -23,12 +23,12 @@ let run f init =
     )
   }
 
-  let f () = 
-    let x = perform (Get ()) in (* エフェクトの発生 *)
-    print_endline (string_of_int x);
-    let _ = perform (Put 3) in  (* エフェクトの発生 *)
-    let y = perform (Get ()) in 
-    print_endline (string_of_int y);
-    ()
+let f () = 
+  let x = perform (Get ()) in (* エフェクトの発生 *)
+  print_endline (string_of_int x);
+  let _ = perform (Put 3) in  (* エフェクトの発生 *)
+  let y = perform (Get ()) in 
+  print_endline (string_of_int y);
+  ()
   
 let _ = run f 1
