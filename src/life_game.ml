@@ -36,7 +36,8 @@ let count array =
         else (
               if k > 1 then (
                             count_array.(i).(j) <- pre;
-                            f i (j+1) (-1) 0)
+                            f i (j+1) (-1) 0
+                            )
               else if k == 0 then(
                                   let count = array.(i).(j-1) + array.(i).(j+1) in 
                                   f i j (k+1) (count+pre)
