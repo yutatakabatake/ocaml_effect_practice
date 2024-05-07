@@ -57,8 +57,7 @@ let rule now_array count_array next_array x y =
           | 3 -> next_array.(y).(x) <- 1
           | _ -> ())
   | 1 -> (match count_array.(y).(x) with
-          | 2 -> next_array.(y).(x) <- 1
-          | 3 -> next_array.(y).(x) <- 1
+          | 2 | 3 -> next_array.(y).(x) <- 1
           | _ -> next_array.(y).(x) <- 0)
   | _ -> ()
 
