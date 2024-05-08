@@ -4,6 +4,8 @@ open Effect.Deep
 type _ Effect.t += Display : int array array -> unit Effect.t
 type _ Effect.t += Count : int array array -> int array array Effect.t
 type _ Effect.t += Make_next_array : (int array array * int array array) -> int array array Effect.t
+type _ Effect.t += Change : (int array array * int * int) -> unit Effect.t
+
 
 let xsize = 5
 let ysize = 5
@@ -81,23 +83,28 @@ let run f =
             in f 1 1;
           continue k next_array
           ))
+        | Change (array,x,y) ->
+          (Some (fun (k: (b,_) continuation) ->
+            (match array.(y).(x) with
+            | 0 -> array.(y).(x) <- 1
+            | 1 -> array.(y).(x) <- 0
+            | _ -> ()
+            );
+            continue k ()
+          ))
         | _ -> None)
     )
   }
 
 let now_array = Array.make_matrix (ysize+2) (xsize+2) 0
 
-let change array x y = 
-  match array.(y).(x) with
-  | 0 -> array.(y).(x) <- 1
-  | 1 -> array.(y).(x) <- 0
-  | _ -> ()
-
-let _ = change now_array 1 1 
-let _ = change now_array 2 2
-let _ = change now_array 4 3
-let _ = change now_array 1 4
-let _ = change now_array 2 4
+let change_array_element () = 
+  let _ = perform (Change (now_array,1,1)) in 
+  let _ = perform (Change (now_array,2,2)) in 
+  let _ = perform (Change (now_array,4,3)) in 
+  let _ = perform (Change (now_array,1,4)) in 
+  let _ = perform (Change (now_array,2,4)) in 
+  ()
 
 let loop () = 
   let rec f now_array n = 
@@ -111,4 +118,5 @@ let loop () =
       f next_array (n+1)
   in f now_array 0
 
+let _ = run change_array_element
 let _ = run loop 
