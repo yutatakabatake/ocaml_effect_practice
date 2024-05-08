@@ -3,6 +3,7 @@ open Effect.Deep
 
 type _ Effect.t += Display : int array array -> unit Effect.t
 type _ Effect.t += Count : int array array -> int array array Effect.t
+type _ Effect.t += Make_next_array : (int array array * int array array) -> int array array Effect.t
 
 let xsize = 5
 let ysize = 5
@@ -14,8 +15,18 @@ let int_to_mark n =
   | 1 -> Some "*"
   | _ -> None 
 
+let rule now_array count_array next_array x y =
+  match now_array.(y).(x) with
+  | 0 -> (match count_array.(y).(x) with
+          | 3 -> next_array.(y).(x) <- 1
+          | _ -> ())
+  | 1 -> (match count_array.(y).(x) with
+          | 2 | 3 -> next_array.(y).(x) <- 1
+          | _ -> next_array.(y).(x) <- 0)
+  | _ -> ()
 
 let run f = 
+  let next_array = Array.make_matrix (ysize+2) (xsize+2) 0 in
   match_with f () {
     retc = (fun x -> x);
     exnc = (fun e -> raise e);
@@ -60,6 +71,16 @@ let run f =
             in f 1 1 (-1) 0;
             continue k count_array
           ))
+        | Make_next_array (now_array,count_array) ->
+          (Some (fun (k: (b,_) continuation) ->
+            let rec f i j = 
+              if i > ysize then ()
+              else if j > xsize then (f (i+1) 1)
+              else (rule now_array count_array next_array j i;
+                    f i (j+1))
+            in f 1 1;
+          continue k next_array
+          ))
         | _ -> None)
     )
   }
@@ -71,51 +92,6 @@ let change array x y =
   | 0 -> array.(y).(x) <- 1
   | 1 -> array.(y).(x) <- 0
   | _ -> ()
-
-(* let count array =
-  let count_array = Array.make_matrix (ysize+2) (xsize+2) 0 in
-  let rec f i j k pre = 
-  if i > ysize then ()
-  else (
-        if j > xsize then f (i+1) 1 (-1) 0 
-        else (
-              if k > 1 then (
-                            count_array.(i).(j) <- pre;
-                            f i (j+1) (-1) 0
-                            )
-              else if k == 0 then(
-                                  let count = array.(i).(j-1) + array.(i).(j+1) in 
-                                  f i j (k+1) (count+pre)
-                                  )
-              else (
-                    let count = array.(i+k).(j-1) + array.(i+k).(j) + array.(i+k).(j+1) in 
-                    f i j (k+1) (count+pre)
-                    )
-              )
-        ) 
-  in f 1 1 (-1) 0;
-  count_array *)
-
-let rule now_array count_array next_array x y =
-  match now_array.(y).(x) with
-  | 0 -> (match count_array.(y).(x) with
-          | 3 -> next_array.(y).(x) <- 1
-          | _ -> ())
-  | 1 -> (match count_array.(y).(x) with
-          | 2 | 3 -> next_array.(y).(x) <- 1
-          | _ -> next_array.(y).(x) <- 0)
-  | _ -> ()
-
-
-let make_next_array now_array count_array next_array =
-  let rec f i j = 
-  if i > ysize then print_newline ()
-  else if j > xsize then (f (i+1) 1)
-  else (rule now_array count_array next_array j i;
-        print_string " ";
-        f i (j+1))
-in f 1 1;
-next_array
 
 let _ = change now_array 1 1 
 let _ = change now_array 2 2
@@ -130,9 +106,9 @@ let loop () =
   and g now_array n = 
       let _ = perform (Display now_array) in 
       let count = perform (Count now_array) in 
-      let next_array = make_next_array now_array count (Array.make_matrix (ysize+2) (xsize+2) 0) in 
+      let next_array = perform (Make_next_array (now_array,count)) in 
+      print_newline ();
       f next_array (n+1)
   in f now_array 0
-
 
 let _ = run loop 
