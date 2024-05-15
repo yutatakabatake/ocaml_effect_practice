@@ -95,12 +95,11 @@ let run f =
           ))
         | Step () ->
           (Some (fun (k: (b,_) continuation) ->
-            let rec f i j = 
+            let rec f i = 
               if i > ysize then ()
-              else if j > xsize then (f (i+1) 1)
-              else (now_array.(i).(j) <- next_array.(i).(j) ;
-                    f i (j+1))
-            in f 1 1;
+              else (Array.blit next_array.(i) 1 now_array.(i) 1 xsize;
+                    f (i+1))
+            in f 1;
             continue k ()
           ))
         | _ -> None)
