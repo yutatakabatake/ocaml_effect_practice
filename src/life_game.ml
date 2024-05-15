@@ -1,7 +1,7 @@
 open Effect
 open Effect.Deep
 
-type _ Effect.t += Display : unit -> unit Effect.t
+type _ Effect.t += Display : int -> unit Effect.t
 type _ Effect.t += Count : unit -> int array array Effect.t
 type _ Effect.t += Make_next_array : int array array -> unit Effect.t
 type _ Effect.t += Change : (int * int) -> unit Effect.t
@@ -35,8 +35,9 @@ let run f =
     exnc = (fun e -> raise e);
     effc = (fun  (type b) (eff: b t)-> 
       (match eff with
-        | Display () -> 
+        | Display n -> 
           (Some (fun (k: (b,_) continuation) ->
+            let _ = print_string ("第" ^ (string_of_int n) ^ "世代\n") in 
             let rec f i j = 
               if i > ysize then ()
               else if j > xsize then (print_newline ();
@@ -113,14 +114,14 @@ let main () =
   let _ = perform (Change (1,4)) in 
   let _ = perform (Change (2,4)) in 
   let rec loop n = 
-    if n < gen then (let _ = perform (Display ()) in 
+    if n < gen then (let _ = perform (Display n) in 
                      let count = perform (Count ()) in 
                      let _ = perform (Make_next_array count) in 
                      let _ = perform (Step ()) in 
                      print_newline ();
                      (loop (n+1))
                     )
-    else perform (Display ()) 
+    else perform (Display n) 
   in loop 0
 
 let _ = run main 
