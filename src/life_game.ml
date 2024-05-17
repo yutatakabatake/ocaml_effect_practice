@@ -1,55 +1,21 @@
+open Effect
+open Effect.Deep
+
+type _ Effect.t += Display : int -> unit Effect.t
+type _ Effect.t += Count : unit -> int array array Effect.t
+type _ Effect.t += Make_next_array : int array array -> unit Effect.t
+type _ Effect.t += Change : (int * int) -> unit Effect.t
+type _ Effect.t += Step : unit -> unit Effect.t
+
 let xsize = 5
 let ysize = 5
-
-let now_array = Array.make_matrix (ysize+2) (xsize+2) 0
+let gen = 5
 
 let int_to_mark n = 
   match n with
   | 0 -> Some "_"
   | 1 -> Some "*"
   | _ -> None 
-
-let display array = 
-  let rec f i j = 
-    if i > ysize then ()
-    else if j > xsize then ( print_newline ();
-                            f (i+1) 1 )
-    else ( (let str = int_to_mark array.(i).(j) in
-            match str with
-            | Some x -> print_string x
-            | None -> ());
-          f i (j+1) )
-  in f 1 1 
-
-let change array x y = 
-  match array.(y).(x) with
-  | 0 -> array.(y).(x) <- 1
-  | 1 -> array.(y).(x) <- 0
-  | _ -> ()
-
-let count array =
-  let count_array = Array.make_matrix (ysize+2) (xsize+2) 0 in
-  let rec f i j k pre = 
-  if i > ysize then ()
-  else (
-        if j > xsize then f (i+1) 1 (-1) 0 
-        else (
-              if k > 1 then (
-                            count_array.(i).(j) <- pre;
-                            f i (j+1) (-1) 0
-                            )
-              else if k == 0 then(
-                                  let count = array.(i).(j-1) + array.(i).(j+1) in 
-                                  f i j (k+1) (count+pre)
-                                  )
-              else (
-                    let count = array.(i+k).(j-1) + array.(i+k).(j) + array.(i+k).(j+1) in 
-                    f i j (k+1) (count+pre)
-                    )
-              )
-        ) 
-  in f 1 1 (-1) 0;
-  count_array
 
 let rule now_array count_array next_array x y =
   match now_array.(y).(x) with
@@ -61,33 +27,101 @@ let rule now_array count_array next_array x y =
           | _ -> next_array.(y).(x) <- 0)
   | _ -> ()
 
+let run f = 
+  let now_array = Array.make_matrix (ysize+2) (xsize+2) 0 in 
+  let next_array = Array.make_matrix (ysize+2) (xsize+2) 0 in
+  match_with f () {
+    retc = (fun x -> x);
+    exnc = (fun e -> raise e);
+    effc = (fun  (type b) (eff: b t)-> 
+      (match eff with
+        | Display n -> 
+          (Some (fun (k: (b,_) continuation) ->
+            let _ = print_string ("第" ^ (string_of_int n) ^ "世代\n") in 
+            let rec f i j = 
+              if i > ysize then ()
+              else if j > xsize then (print_newline ();
+                                      f (i+1) 1)
+              else ((let str = int_to_mark now_array.(i).(j) in
+                      match str with
+                      | Some x -> print_string x
+                      | None -> ());
+                    f i (j+1))
+            in f 1 1;
+            continue k ()
+          ))
+        | Count () ->
+          (Some (fun (k: (b,_) continuation) ->
+            let count_array = Array.make_matrix (ysize+2) (xsize+2) 0 in
+            let rec f i j k pre = 
+            if i > ysize then ()
+            else (
+                  if j > xsize then f (i+1) 1 (-1) 0 
+                  else (
+                        if k > 1 then (
+                                      count_array.(i).(j) <- pre;
+                                      f i (j+1) (-1) 0
+                                      )
+                        else if k == 0 then(
+                                            let count = now_array.(i).(j-1) + now_array.(i).(j+1) in 
+                                            f i j (k+1) (count+pre)
+                                            )
+                        else (
+                              let count = now_array.(i+k).(j-1) + now_array.(i+k).(j) + now_array.(i+k).(j+1) in 
+                              f i j (k+1) (count+pre)
+                              )
+                        )
+                  ) 
+            in f 1 1 (-1) 0;
+            continue k count_array
+          ))
+        | Make_next_array (count_array) ->
+          (Some (fun (k: (b,_) continuation) ->
+            let rec f i j = 
+              if i > ysize then ()
+              else if j > xsize then (f (i+1) 1)
+              else (rule now_array count_array next_array j i;
+                    f i (j+1))
+            in f 1 1;
+            continue k ()
+          ))
+        | Change (x,y) ->
+          (Some (fun (k: (b,_) continuation) ->
+            (match now_array.(y).(x) with
+            | 0 -> now_array.(y).(x) <- 1
+            | 1 -> now_array.(y).(x) <- 0
+            | _ -> ()
+            );
+            continue k ()
+          ))
+        | Step () ->
+          (Some (fun (k: (b,_) continuation) ->
+            let rec f i = 
+              if i > ysize then ()
+              else (Array.blit next_array.(i) 1 now_array.(i) 1 xsize;
+                    f (i+1))
+            in f 1;
+            continue k ()
+          ))
+        | _ -> None)
+    )
+  }
 
-let make_next_array now_array count_array next_array =
-  let rec f i j = 
-  if i > ysize then print_newline ()
-  else if j > xsize then (f (i+1) 1)
-  else (rule now_array count_array next_array j i;
-        print_string " ";
-        f i (j+1))
-in f 1 1;
-next_array
+let main () =
+  let _ = perform (Change (1,1)) in 
+  let _ = perform (Change (2,2)) in 
+  let _ = perform (Change (4,3)) in 
+  let _ = perform (Change (1,4)) in 
+  let _ = perform (Change (2,4)) in 
+  let rec loop n = 
+    if n < gen then (let _ = perform (Display n) in 
+                     let count = perform (Count ()) in 
+                     let _ = perform (Make_next_array count) in 
+                     let _ = perform (Step ()) in 
+                     print_newline ();
+                     (loop (n+1))
+                    )
+    else perform (Display n) 
+  in loop 0
 
-let _ = change now_array 1 1 
-let _ = change now_array 2 2
-let _ = change now_array 4 3
-let _ = change now_array 1 4
-let _ = change now_array 2 4
-
-let gen = 5
-let loop = 
-  let rec f now_array n = 
-    if n < gen then g now_array n 
-    else display now_array
-  and g now_array n = 
-      display now_array;
-      let count = count now_array in 
-      let next_array = make_next_array now_array count (Array.make_matrix (ysize+2) (xsize+2) 0) in 
-      f next_array (n+1)
-  in f now_array 0
-
-let _ = loop 
+let _ = run main 
