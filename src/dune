@@ -6,4 +6,5 @@
 (executable
  (name life_game)
  (modules life_game)
+ (libraries lib)
  (public_name life_game))
