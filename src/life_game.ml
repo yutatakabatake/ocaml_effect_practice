@@ -8,9 +8,9 @@ type _ Effect.t += Make_next_array : int array array -> unit Effect.t
 type _ Effect.t += Change : (int * int) -> unit Effect.t
 type _ Effect.t += Step : unit -> unit Effect.t
 
-let xsize = 5
-let ysize = 5
-let gen = 5
+let xsize = 10
+let ysize = 10
+let gen = 100
 
 let int_to_color n = 
   match n with
@@ -38,6 +38,7 @@ let run f =
       (match eff with
         | Display n -> 
           (Some (fun (k: (b,_) continuation) ->
+            ignore (Unix.system "clear");
             let _ = print_string ("第" ^ (string_of_int n) ^ "世代\n") in 
             let rec f i j = 
               if i > ysize then ()
@@ -119,7 +120,7 @@ let main () =
                      let count = perform (Count ()) in 
                      let _ = perform (Make_next_array count) in 
                      let _ = perform (Step ()) in 
-                     print_newline ();
+                     Unix.sleepf 0.1;
                      (loop (n+1))
                     )
     else perform (Display n) 
