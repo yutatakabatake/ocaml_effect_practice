@@ -1,5 +1,6 @@
 open Effect
 open Effect.Deep
+open Lib
 
 type _ Effect.t += Display : int -> unit Effect.t
 type _ Effect.t += Count : unit -> int array array Effect.t
@@ -11,10 +12,10 @@ let xsize = 5
 let ysize = 5
 let gen = 5
 
-let int_to_mark n = 
+let int_to_color n = 
   match n with
-  | 0 -> Some "_"
-  | 1 -> Some "*"
+  | 0 -> Some 15 (* 白 *)
+  | 1 -> Some 70 (* 緑色 *)
   | _ -> None 
 
 let rule now_array count_array next_array x y =
@@ -42,9 +43,9 @@ let run f =
               if i > ysize then ()
               else if j > xsize then (print_newline ();
                                       f (i+1) 1)
-              else ((let str = int_to_mark now_array.(i).(j) in
-                      match str with
-                      | Some x -> print_string x
+              else ((let color = int_to_color now_array.(i).(j) in
+                      match color with
+                      | Some x -> Cli.print_color_cell x
                       | None -> ());
                     f i (j+1))
             in f 1 1;
