@@ -1,7 +1,9 @@
 (executable
  (name shallow_example)
- (modules shallow_example))
+ (modules shallow_example)
+ (public_name shallow_example))
 
 (executable
  (name deep_example)
- (modules deep_example))
+ (modules deep_example)
+ (public_name deep_example))
