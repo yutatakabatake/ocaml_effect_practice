@@ -8,3 +8,8 @@
  (modules life_game)
  (libraries lib)
  (public_name life_game))
+
+(executable
+ (name effect_practice)
+ (modules effect_practice)
+ (public_name effect_practice))
