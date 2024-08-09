@@ -13,3 +13,8 @@
  (name effect_practice)
  (modules effect_practice)
  (public_name effect_practice))
+
+(executable
+ (name reversed_output)
+ (modules reversed_output)
+ (public_name reversed_output))
