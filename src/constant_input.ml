@@ -46,6 +46,8 @@ let printFullName () =
 
 let _ = print_endline ("with handler handle printFullName")
 let _ = handler printFullName 
+(* BobBob *)
 
 let _ = print_endline ("with (alwaysRead Bob) handle printFullName")
 let _ = alwaysRead "Bob" printFullName
+(* BobBob *)
